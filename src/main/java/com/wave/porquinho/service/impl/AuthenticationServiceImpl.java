@@ -1,9 +1,12 @@
 package com.wave.porquinho.service.impl;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,28 +20,27 @@ import com.wave.porquinho.repository.UserRepository;
 import com.wave.porquinho.service.AuthenticationService;
 import com.wave.porquinho.service.EmailService;
 
+import jakarta.mail.MessagingException;
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class AuthenticationServiceImpl implements AuthenticationService {
 
 	private final UserRepository userRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final AuthenticationManager authenticationManager;
 	private final EmailService emailService;
+    @Value("${hostname}")
+    private String hostname;
 
-	public AuthenticationServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder,
-			AuthenticationManager authenticationManager, EmailService emailService) {
-		this.userRepository = userRepository;
-		this.passwordEncoder = passwordEncoder;
-		this.authenticationManager = authenticationManager;
-		this.emailService = emailService;
-	}
-
-	public User singup(RegisterUserDto registerUser) {
+	public User singup(RegisterUserDto registerUser) throws MessagingException {
 		User user = new User(registerUser.getNome(), registerUser.getEmail(),
 				passwordEncoder.encode(registerUser.getPassword()));
 		user.setCodigoVerificacao(generateVerificationCode());
 		user.setExpiracaoCodigoVerificacao(LocalDateTime.now().plusMinutes(15));
 		user.setVerificado(false);
+		sendEmail(user, "Porquinho - Verificação de Email", "registration-template", "registrationUrl",  "/verificacao/" + user.getCodigoVerificacao());
 		sendVerificationEmail(user);
 
 		return userRepository.save(user);
@@ -77,7 +79,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 		}
 	}
 
-	public void resendVerificationCode(String email) {
+	public void resendVerificationCode(String email) throws MessagingException {
 		Optional<User> user = userRepository.findByEmail(email);
 		if (user.isPresent()) {
 			User userEntity = user.get();
@@ -86,7 +88,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			}
 			userEntity.setCodigoVerificacao(generateVerificationCode());
 			userEntity.setExpiracaoCodigoVerificacao(LocalDateTime.now().plusMinutes(15));
-			sendVerificationEmail(userEntity);
+			sendEmail(userEntity, "Porquinho - Verificação de Email", "email/verification-email", "urlVerificacao",  "/verificacao/" + userEntity.getCodigoVerificacao());
 			userRepository.save(userEntity);
 		} else {
 			throw new RuntimeException("Usuário não encontrado");
@@ -111,11 +113,19 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 				+ "<p style=\"font-size: 18px; font-weight: bold; color: #007bff;\">" + codigoVerificacao + "</p>"
 				+ "</div>" + "</div>" + "</body>" + "</html>";
 		try {
-			emailService.sendVerificationEmail(user.getEmail(), objeto, htmlMessage);
+			emailService.sendVerificationEmail(user.getEmail(), htmlMessage);
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new RuntimeException("Erro ao enviar e-mail de verificação");
 		}
 	}
+	
+    private void sendEmail(User user, String subject, String template, String urlAttribute, String urlPath)
+            throws MessagingException {
+        Map<String, Object> attributes = new HashMap<>();
+        attributes.put("nome", user.getNome());
+        attributes.put(urlAttribute, "http://" + hostname + urlPath);
+        emailService.sendMessageHtml(user.getEmail(), subject, template, attributes);
+    }
 
 }

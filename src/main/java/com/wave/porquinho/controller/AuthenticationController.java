@@ -2,6 +2,7 @@ package com.wave.porquinho.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -13,7 +14,7 @@ import com.wave.porquinho.responses.LoginResponse;
 import com.wave.porquinho.service.AuthenticationService;
 import com.wave.porquinho.service.JwtService;
 
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import jakarta.mail.MessagingException;
 
 @RequestMapping("/auth")
 @RestController
@@ -27,7 +28,7 @@ public class AuthenticationController {
 	}
 	
 	@PostMapping("/singup")
-	public ResponseEntity<User> register(@RequestBody RegisterUserDto user) {
+	public ResponseEntity<User> register(@RequestBody RegisterUserDto user) throws MessagingException {
 		return ResponseEntity.ok(authenticationService.singup(user));
 	}
 
