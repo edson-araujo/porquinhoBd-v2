@@ -34,11 +34,13 @@ public class SecurityConfiguration {
 	        .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Adiciona CORS
 	        .authorizeHttpRequests(auth -> auth
 	            .requestMatchers("/auth/**").permitAll() // Libera todas as rotas de autenticação
+	            .requestMatchers("/h2-console/**").permitAll() 
 	            .anyRequest().authenticated() // Protege todas as outras rotas
 	        )
 	        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 	        .authenticationProvider(authenticationProvider)
-	        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+	        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+	        .headers(headers -> headers.frameOptions().disable());;
 
 	    return http.build();
 	}
