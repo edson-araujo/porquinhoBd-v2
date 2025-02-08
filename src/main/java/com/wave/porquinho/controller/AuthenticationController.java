@@ -28,8 +28,8 @@ public class AuthenticationController {
 	}
 	
 	@PostMapping("/singup")
-	public ResponseEntity<User> register(@RequestBody RegisterUserDto user) throws MessagingException {
-		return ResponseEntity.ok(authenticationService.singup(user));
+	public ResponseEntity<String> register(@RequestBody RegisterUserDto user) throws MessagingException {
+		return authenticationService.singup(user);
 	}
 
 	@PostMapping("/login")

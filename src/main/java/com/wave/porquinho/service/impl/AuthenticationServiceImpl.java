@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,7 +20,7 @@ import com.wave.porquinho.model.User;
 import com.wave.porquinho.repository.UserRepository;
 import com.wave.porquinho.service.AuthenticationService;
 import com.wave.porquinho.service.EmailService;
-
+import org.springframework.http.HttpStatus;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 
@@ -31,19 +32,30 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	private final PasswordEncoder passwordEncoder;
 	private final AuthenticationManager authenticationManager;
 	private final EmailService emailService;
-    @Value("${hostname}")
-    private String hostname;
+	@Value("${hostname}")
+	private String hostname;
 
-	public User singup(RegisterUserDto registerUser) throws MessagingException {
-		User user = new User(registerUser.getNome(), registerUser.getEmail(),
+	public ResponseEntity<String> singup(RegisterUserDto registerUser) throws MessagingException {
+		if (userRepository.findByEmail(registerUser.getEmail()).isPresent()) {
+			return ResponseEntity.status(HttpStatus.CONFLICT).body("E-mail já cadastrado.");
+		}
+
+		User user = new User(registerUser.getNome(), registerUser.getSobrenome(), registerUser.getEmail(),
 				passwordEncoder.encode(registerUser.getPassword()));
 		user.setCodigoVerificacao(generateVerificationCode());
 		user.setExpiracaoCodigoVerificacao(LocalDateTime.now().plusMinutes(15));
 		user.setVerificado(false);
-		sendEmail(user, "Porquinho - Verificação de Email", "registration-template", "registrationUrl",  "/verificacao/" + user.getCodigoVerificacao());
-		sendVerificationEmail(user);
-
-		return userRepository.save(user);
+		try {
+			userRepository.save(user);
+			sendEmail(user, "Porquinho - Verificação de Email", "registration-template", "registrationUrl",
+					"/verificacao/" + user.getCodigoVerificacao());
+			return ResponseEntity.status(HttpStatus.CREATED)
+					.body("Usuário cadastrado com sucesso. Verifique seu e-mail para ativação.");
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body("Erro ao salvar usuário");
+		}
 	}
 
 	public User authenticateUser(LoginUserDto loginUser) {
@@ -88,7 +100,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			}
 			userEntity.setCodigoVerificacao(generateVerificationCode());
 			userEntity.setExpiracaoCodigoVerificacao(LocalDateTime.now().plusMinutes(15));
-			sendEmail(userEntity, "Porquinho - Verificação de Email", "email/verification-email", "urlVerificacao",  "/verificacao/" + userEntity.getCodigoVerificacao());
+			sendEmail(userEntity, "Porquinho - Verificação de Email", "email/verification-email", "urlVerificacao",
+					"/verificacao/" + userEntity.getCodigoVerificacao());
 			userRepository.save(userEntity);
 		} else {
 			throw new RuntimeException("Usuário não encontrado");
@@ -119,13 +132,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 			throw new RuntimeException("Erro ao enviar e-mail de verificação");
 		}
 	}
-	
-    private void sendEmail(User user, String subject, String template, String urlAttribute, String urlPath)
-            throws MessagingException {
-        Map<String, Object> attributes = new HashMap<>();
-        attributes.put("nome", user.getNome());
-        attributes.put(urlAttribute, "http://" + hostname + urlPath);
-        emailService.sendMessageHtml(user.getEmail(), subject, template, attributes);
-    }
+
+	private void sendEmail(User user, String subject, String template, String urlAttribute, String urlPath)
+			throws MessagingException {
+		Map<String, Object> attributes = new HashMap<>();
+		attributes.put("nome", user.getNome());
+		attributes.put("codigoVerificacao", user.getCodigoVerificacao());
+		attributes.put(urlAttribute, "http://" + hostname + urlPath);
+		emailService.sendMessageHtml(user.getEmail(), subject, template, attributes);
+	}
 
 }

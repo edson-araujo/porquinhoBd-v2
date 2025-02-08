@@ -20,8 +20,8 @@
 			<td style="background-color: #ffffff; padding: 40px 30px 40px 30px; text-align: center">
 				<h3>Olá <span th:text="${nome}" th:remove="tag"></span>!</h3>
 				<p>Bem vindo ao seu Porquinho Finanças.</p>
-				<p>Para finalizar a inscrição acesse o link: </p>
-				<a th:href="@{${registrationUrl}}">confirmar registro</a>
+				<p>Seu código de verificação: </p>
+				<h1 th:text="${codigoVerificacao}" th:remove="tag"></h1>
 			</td>
 		</tr>
 	</table>
