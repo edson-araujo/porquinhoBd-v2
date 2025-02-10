@@ -5,26 +5,59 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 	<style>
-		.table {
-			border-collapse: collapse;
-			width: 600px;
-			border-radius: 50px;
-			border: 1px solid #dee2e6;
+		body {
+			font-family: Arial, sans-serif;
+			background-color: #f4f4f4;
+			margin: 0;
+			padding: 0;
+		}
+		.email-container {
+			width: 100%;
+			max-width: 600px;
+			margin: 20px auto;
+			background: #ffffff;
+			padding: 30px;
+			border-radius: 8px;
+			box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+			text-align: center;
+		}
+		.header {
+			background-color: #E11D48;
+			color: #ffffff;
+			padding: 15px;
+			font-size: 20px;
+			font-weight: bold;
+			border-radius: 8px 8px 0 0;
+		}
+		.verification-code {
+			font-size: 28px;
+			font-weight: bold;
+			color: #E11D48;
+			margin: 20px 0;
+		}
+		.footer {
+			margin-top: 20px;
+			font-size: 12px;
+			color: #666666;
 		}
 	</style>
 </head>
 
 <body>
-	<table align="center" class="table">
-		<tr>
-			<td style="background-color: #ffffff; padding: 40px 30px 40px 30px; text-align: center">
-				<h3>Olá <span th:text="${nome}" th:remove="tag"></span>!</h3>
-				<p>Bem vindo ao seu Porquinho Finanças.</p>
-				<p>Seu código de verificação: </p>
-				<h1 th:text="${codigoVerificacao}" th:remove="tag"></h1>
-			</td>
-		</tr>
-	</table>
+	<div class="email-container">
+		<div class="header">Validação de Conta</div>
+		<div class="content">
+			<br>
+			<h3>Olá!</h3>
+			<p>Bem-vindo ao seu Porquinho Finanças.</p>
+			<p>Seu código de verificação:</p>
+			<h1 class="verification-code">458500</h1>
+			<p>Se você não solicitou este código, ignore este e-mail.</p>
+		</div>
+		<div class="footer">
+			<p>© 2025 Porquinho Finanças. Todos os direitos reservados.</p>
+		</div>
+	</div>
 </body>
 
 </html>
