@@ -29,14 +29,22 @@ public class SecurityConfiguration {
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		http.csrf(csrf -> csrf.disable())
-				.authorizeHttpRequests(
-						authorize -> authorize.requestMatchers("/auth/**").permitAll().anyRequest().authenticated())
-				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.authenticationProvider(authenticationProvider)
-				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-		return http.build();
+	    http
+	        .csrf(csrf -> csrf.disable()) // Desativa CSRF para testes
+	        .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Adiciona CORS
+	        .authorizeHttpRequests(auth -> auth
+	            .requestMatchers("/auth/**").permitAll() // Libera todas as rotas de autenticação
+	            .requestMatchers("/h2-console/**").permitAll() 
+	            .anyRequest().authenticated() // Protege todas as outras rotas
+	        )
+	        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+	        .authenticationProvider(authenticationProvider)
+	        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+	        .headers(headers -> headers.frameOptions().disable());;
+
+	    return http.build();
 	}
+
 
 	@Bean
 	public CorsConfigurationSource corsConfigurationSource() {

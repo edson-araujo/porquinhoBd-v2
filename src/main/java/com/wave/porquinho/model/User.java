@@ -32,7 +32,7 @@ public class User implements UserDetails {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	
-	@Column(nullable = false, unique = true)
+	@Column(nullable = false)
 	private String nome;
 	
 	@Column(nullable = false)
@@ -77,9 +77,10 @@ public class User implements UserDetails {
 		return null;
 	}
 
-	public User(String nome, String email, String password) {
+	public User(String nome,String sobrenome, String email, String password) {
 		super();
 		this.nome = nome;
+		this.sobrenome = sobrenome;
 		this.email = email;
 		this.password = password;
 	}
