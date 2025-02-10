@@ -1,5 +1,8 @@
 package com.wave.porquinho.controller;
 
+import java.util.Map;
+
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -27,8 +30,8 @@ public class AuthenticationController {
 		this.authenticationService = authenticationService;
 	}
 	
-	@PostMapping("/singup")
-	public ResponseEntity<String> register(@RequestBody RegisterUserDto user) throws MessagingException {
+	@PostMapping("/signup")
+	public ResponseEntity<Map<String, String>> register(@RequestBody RegisterUserDto user) throws MessagingException {
 		return authenticationService.singup(user);
 	}
 
@@ -41,22 +44,12 @@ public class AuthenticationController {
 	}
 	
 	@PostMapping("/autenticar")
-	public ResponseEntity<?> autenticarConta(@RequestBody VerifyUserDto user) {
-		try {
-			authenticationService.verifyUser(user);
-			return ResponseEntity.ok().build();
-		} catch (Exception e) {
-			return ResponseEntity.badRequest().body(e.getMessage());
-		}
+	public ResponseEntity<Map<String, String>> autenticarConta(@RequestBody VerifyUserDto user) {
+		return authenticationService.verifyUser(user);
 	}
 	
 	@PostMapping("/reenviarEmail")
-	public ResponseEntity<?> reenviarCodigoAutenticacao(@RequestBody String email) {
-		try {
-			authenticationService.resendVerificationCode(email);
-			return ResponseEntity.ok().build();
-		} catch (Exception e) {
-			return ResponseEntity.badRequest().body(e.getMessage());
-		}
+	public ResponseEntity<Map<String, String>> reenviarCodigoAutenticacao(@RequestBody VerifyUserDto data) throws MessagingException {
+		return authenticationService.resendVerificationCode(data.getEmail());
 	}
 }

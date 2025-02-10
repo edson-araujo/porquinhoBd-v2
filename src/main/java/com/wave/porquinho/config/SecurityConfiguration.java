@@ -33,7 +33,7 @@ public class SecurityConfiguration {
 	        .csrf(csrf -> csrf.disable()) // Desativa CSRF para testes
 	        .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Adiciona CORS
 	        .authorizeHttpRequests(auth -> auth
-	            .requestMatchers("/auth/**").permitAll() // Libera todas as rotas de autenticação
+	            .requestMatchers("/auth/**").permitAll()
 	            .requestMatchers("/h2-console/**").permitAll() 
 	            .anyRequest().authenticated() // Protege todas as outras rotas
 	        )
@@ -52,6 +52,7 @@ public class SecurityConfiguration {
 		configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:8080"));
 		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
 		configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+		configuration.setAllowCredentials(true);
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		source.registerCorsConfiguration("/**", configuration);
 		return source;

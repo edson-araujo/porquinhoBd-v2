@@ -1,5 +1,8 @@
 package com.wave.porquinho.service;
 
+import java.util.Map;
+
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 
 import com.wave.porquinho.dto.LoginUserDto;
@@ -11,9 +14,8 @@ import jakarta.mail.MessagingException;
 
 public interface AuthenticationService {
 	
-	ResponseEntity<String> singup(RegisterUserDto registerUser) throws MessagingException;
+	ResponseEntity<Map<String, String>> singup(RegisterUserDto registerUser) throws MessagingException;
 	User authenticateUser(LoginUserDto loginUser);
-	void verifyUser(VerifyUserDto verifyUser);
-	void resendVerificationCode(String email) throws MessagingException;
-	void sendVerificationEmail(User user) throws MessagingException;
+	ResponseEntity<Map<String, String>> verifyUser(VerifyUserDto verifyUser);
+	ResponseEntity<Map<String, String>> resendVerificationCode(String email) throws MessagingException;
 }
