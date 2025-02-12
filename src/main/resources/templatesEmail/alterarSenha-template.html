@@ -45,7 +45,7 @@
 
 <body>
 	<div class="email-container">
-		<div class="header">Validação de Conta</div>
+		<div class="header">Alterar Senha</div>
 		<div class="content">
 			<br>
 			<h3>Olá <span th:text="${nome}" th:remove="tag">!</h3>
@@ -53,7 +53,7 @@
 			<p>Seu código para alterar:</p>
 			<h1 class="verification-code" th:text="${codigoVerificacao}"></h1>
 			<p>Para alterar sua senha, clique nesse link: </p>
-			<a th:href="@{${resetUrl}}">Alterar senha</a>
+			<a th:href="@{${resetSenhaUrl}}">Alterar senha</a>
 		</div>
 		<div class="footer">
 			<p>© 2025 Porquinho Finanças. Todos os direitos reservados.</p>

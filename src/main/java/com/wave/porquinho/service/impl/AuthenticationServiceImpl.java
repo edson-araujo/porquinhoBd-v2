@@ -7,23 +7,26 @@ import java.util.Optional;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.wave.porquinho.dto.LoginUserDto;
 import com.wave.porquinho.dto.RegisterUserDto;
 import com.wave.porquinho.dto.VerifyUserDto;
+import com.wave.porquinho.exceptions.UserNotFoundException;
+import com.wave.porquinho.exceptions.UserNotVerifiedException;
 import com.wave.porquinho.model.User;
 import com.wave.porquinho.repository.UserRepository;
+import com.wave.porquinho.responses.ApiRetornoResponse;
 import com.wave.porquinho.service.AuthenticationService;
 import com.wave.porquinho.service.EmailService;
-
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
@@ -39,44 +42,61 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 	@Value("${hostname}")
 	private String hostname;
 
-	public ResponseEntity<Map<String, String>> singup(RegisterUserDto registerUser) throws MessagingException {
-		if (userRepository.findByEmail(registerUser.getEmail()).isPresent()) {
-			return ResponseEntity.status(HttpStatus.CONFLICT)
-					.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-					.body(Map.of("message", "E-mail já cadastrado."));
-		}
+	public ResponseEntity<ApiRetornoResponse> singup(RegisterUserDto registerUser) throws MessagingException {
+	    Optional<User> existingUser = userRepository.findByEmail(registerUser.getEmail());
 
-		User user = new User(registerUser.getNome(), registerUser.getSobrenome(), registerUser.getEmail(),
-				passwordEncoder.encode(registerUser.getPassword()));
-		user.setCodigoVerificacao(generateVerificationCode());
-		user.setExpiracaoCodigoVerificacao(LocalDateTime.now().plusMinutes(15));
-		user.setVerificado(false);
-		try {
-			userRepository.save(user);
-			sendEmail(user, "Porquinho - Verificação de Email", "registration-template", "registrationUrl",
-					"/verificacao/" + user.getCodigoVerificacao());
-			return ResponseEntity.status(HttpStatus.CREATED)
-					  .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-					 .body(Map.of("message", "Usuário cadastrado com sucesso. Verifique seu e-mail para ativação."));
-		} catch (Exception e) {
-			e.printStackTrace();
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-	                .body(Map.of("message", "Erro ao salvar usuário"));
-		}
+	    if (existingUser.isPresent()) {
+	        return ResponseEntity.status(HttpStatus.CONFLICT)
+	                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+	                .body(ApiRetornoResponse.withFields(HttpStatus.CONFLICT.value(), 
+	                     "Erro de validação. Revise seus dados.", Map.of("email", "E-mail já cadastrado.")));
+	    }
+
+	    User user = new User(registerUser.getNome(), registerUser.getSobrenome(), registerUser.getEmail(),
+	            passwordEncoder.encode(registerUser.getPassword()));
+	    user.setCodigoVerificacao(generateVerificationCode());
+	    user.setExpiracaoCodigoVerificacao(LocalDateTime.now().plusMinutes(15));
+	    user.setVerificado(false);
+
+	    try {
+	        userRepository.save(user);
+	        sendEmail(user, "Porquinho - Verificação de Email", "registration-template", "registrationUrl",
+	                "/verificacao/" + user.getCodigoVerificacao());
+
+	        return ResponseEntity.status(HttpStatus.CREATED)
+	                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+	                .body(ApiRetornoResponse.of(HttpStatus.CREATED.value(), 
+	                      "Usuário cadastrado com sucesso. Verifique seu e-mail para ativação."));
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+	                .body(ApiRetornoResponse.of(HttpStatus.INTERNAL_SERVER_ERROR.value(), 
+	                      "Erro ao salvar usuário, tente novamente mais tarde."));
+	    }
 	}
+
 
 	public User authenticateUser(LoginUserDto loginUser) {
-		User user = userRepository.findByEmail(loginUser.getEmail())
-				.orElseThrow(() -> new RuntimeException("User not found"));
-		if (!user.isVerificado()) {
-			throw new RuntimeException("Usuário não verificado, por favor verifique seu e-mail.");
-		}
-		authenticationManager
-				.authenticate(new UsernamePasswordAuthenticationToken(loginUser.getEmail(), loginUser.getPassword()));
+	    Optional<User> userOptional = userRepository.findByEmail(loginUser.getEmail());
 
-		return user;
+	    if (userOptional.isEmpty()) {
+	        throw new UserNotFoundException("Conta não cadastrada");
+	    }
+
+	    User user = userOptional.get();
+
+	    if (!user.isVerificado()) {
+	        throw new UserNotVerifiedException("Usuário não verificado, por favor verifique seu e-mail.");
+	    }
+
+	    authenticationManager.authenticate(
+	        new UsernamePasswordAuthenticationToken(loginUser.getEmail(), loginUser.getPassword())
+	    );
+
+	    return user;
 	}
+
 
 	public ResponseEntity<Map<String, String>> verifyUser(VerifyUserDto verifyUser) {
 		Optional<User> optionalUser = userRepository.findByEmail(verifyUser.getEmail());
@@ -131,6 +151,28 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 		attributes.put("codigoVerificacao", user.getCodigoVerificacao());
 		attributes.put(urlAttribute, "http://" + hostname + urlPath);
 		emailService.sendMessageHtml(user.getEmail(), subject, template, attributes);
+	}
+	
+	public ResponseEntity<ApiRetornoResponse> esqueciSenha(@RequestParam String email) throws MessagingException {
+	    Optional<User> userOptional = userRepository.findByEmail(email);
+	    if (userOptional.isEmpty()) {
+	        throw new UserNotFoundException("E-mail não cadastrado.");
+	    }
+
+	    User user = userOptional.get();
+	    String resetToken = generateVerificationCode();
+	    user.setCodigoVerificacao(resetToken);
+	    user.setVerificado(false);
+	    user.setExpiracaoCodigoVerificacao(LocalDateTime.now().plusMinutes(5));
+	    userRepository.save(user);
+
+	    sendEmail(user, "Porquinho - Alteração de senha", "alterarSenha-template", "resetSenhaUrl",
+                "/verificacao/" + user.getCodigoVerificacao());
+
+	    return ResponseEntity.status(HttpStatus.OK)
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .body(ApiRetornoResponse.of(HttpStatus.OK.value(), 
+                      "E-mail enviado com sucesso"));
 	}
 
 }
