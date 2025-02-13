@@ -9,7 +9,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -43,8 +43,8 @@ public class User implements UserDetails {
 	private String email;
 	
 	@Column(nullable = false)
-	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 	@Size(min = 8)
+	@JsonIgnore
 	private String password;
 	
 	@CreatedDate
@@ -69,12 +69,12 @@ public class User implements UserDetails {
 
 	@Override
 	public String getPassword() {
-		return null;
+		return this.password;
 	}
 
 	@Override
 	public String getUsername() {
-		return null;
+		return this.email;
 	}
 
 	public User(String nome,String sobrenome, String email, String password) {

@@ -4,6 +4,7 @@ import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 
+import com.wave.porquinho.dto.AlterarSenhaDto;
 import com.wave.porquinho.dto.LoginUserDto;
 import com.wave.porquinho.dto.RegisterUserDto;
 import com.wave.porquinho.dto.VerifyUserDto;
@@ -19,4 +20,5 @@ public interface AuthenticationService {
 	ResponseEntity<Map<String, String>> verifyUser(VerifyUserDto verifyUser);
 	ResponseEntity<Map<String, String>> resendVerificationCode(String email) throws MessagingException;
 	ResponseEntity<ApiRetornoResponse> esqueciSenha(String email) throws MessagingException;
+	ResponseEntity<ApiRetornoResponse> alterarSenha(AlterarSenhaDto alterarSenha);
 }

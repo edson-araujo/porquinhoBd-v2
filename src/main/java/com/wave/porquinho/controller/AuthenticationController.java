@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.wave.porquinho.dto.AlterarSenhaDto;
 import com.wave.porquinho.dto.LoginUserDto;
 import com.wave.porquinho.dto.RegisterUserDto;
 import com.wave.porquinho.dto.VerifyUserDto;
@@ -84,4 +85,8 @@ public class AuthenticationController {
 		return authenticationService.esqueciSenha(data.getEmail());
 	}
 
+	@PostMapping("/alterarSenha")
+	public ResponseEntity<ApiRetornoResponse> alterPassword(@RequestBody AlterarSenhaDto data) throws MessagingException {
+		return authenticationService.alterarSenha(data);
+	} 
 }

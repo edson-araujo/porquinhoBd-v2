@@ -35,7 +35,7 @@ public class SecurityConfiguration {
 	        .authorizeHttpRequests(auth -> auth
 	            .requestMatchers("/auth/**").permitAll()
 	            .requestMatchers("/h2-console/**").permitAll() 
-	            .anyRequest().authenticated() // Protege todas as outras rotas
+	            .anyRequest().authenticated()
 	        )
 	        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 	        .authenticationProvider(authenticationProvider)
@@ -49,7 +49,12 @@ public class SecurityConfiguration {
 	@Bean
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
-		configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:8080"));
+		  configuration.setAllowedOrigins(List.of(
+			        "http://localhost:3000",
+			        "http://192.168.15.10:3000",
+			        "http://localhost:8080"
+			    ));
+		configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:8080", "http://192.168.15.10:3000"));
 		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
 		configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
 		configuration.setAllowCredentials(true);
